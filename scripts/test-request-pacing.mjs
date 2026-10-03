@@ -1,0 +1,20 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import ts from 'typescript';
+import assert from 'node:assert/strict';
+const source=fs.readFileSync(new URL('../lib/football/client.ts',import.meta.url),'utf8');
+const js=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText;
+const starts=[];let active=0,maxActive=0;
+const context={exports:{},require:()=>({}),URLSearchParams,AbortSignal,setTimeout,clearTimeout,console,fetch:async url=>{
+ starts.push({view:new URLSearchParams(url.split('?')[1]).get('view'),at:Date.now()});
+ maxActive=Math.max(maxActive,++active);
+ await new Promise(resolve=>setTimeout(resolve,650));active--;
+ return {ok:true,json:async()=>({ok:true})};
+}};
+vm.runInNewContext(js,context);
+const request=context.exports.requestData;
+await Promise.all([request('view=badge&id=1'),request('view=cards&id=2'),request('view=badge&id=3'),request('view=event&id=4')]);
+assert.equal(starts[1].view,'event','Opening a match must outrank queued background requests');
+assert.ok(maxActive<=3,'No more than three requests may run together');
+for(let i=1;i<starts.length;i++)assert.ok(starts[i].at-starts[i-1].at>=280,'Requests must be paced');
+console.log('PASS: match priority, bounded concurrency and paced requests');

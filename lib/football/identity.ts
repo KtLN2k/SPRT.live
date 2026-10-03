@@ -1,0 +1,9 @@
+import { hebrewTeam } from './names';
+import { clubs } from './demo';
+const aliases:Record<string,string>={'fc barcelona':'barcelona','barcelona':'barcelona','real madrid':'madrid','maccabi haifa':'haifa','maccabi tel aviv':'telaviv','arsenal':'arsenal','liverpool':'liverpool','bayern munich':'bayern','fc bayern münchen':'bayern','inter milan':'inter','internazionale':'inter','borussia dortmund':'dortmund','hapoel beer sheva':'beersheva','beitar jerusalem':'beitar','maccabi netanya':'netanya','ashdod':'ashdod'};
+const leagues:Record<string,string>={'ליגת העל':'israel','Israeli Premier League':'israel','ליגת האלופות':'champions','UEFA Champions League':'champions','פרמייר ליג':'england','English Premier League':'england','לה ליגה':'spain','Spanish La Liga':'spain','בונדסליגה':'germany','German Bundesliga':'germany','גביע העולם':'world','FIFA World Cup':'world','FIFA World Cup 2026':'world','סרייה א׳':'italy','Italian Serie A':'italy','ליג 1':'france','French Ligue 1':'france'};
+export function badgeFor(name:string){const club=clubs.find(c=>c[1]===name||c[0]===name.toLowerCase());const key=club?.[0]||aliases[name.toLowerCase()]||Object.entries(aliases).find(([en])=>hebrewTeam(en)===name)?.[1];return key?`/badges/${key}.png`:leagues[name]?`/leagues/${leagues[name]}.png`:'';}
+export const teamLabel=hebrewTeam;
+export function safeBadge(src?:string){if(!src)return '';try{const u=new URL(src);return u.protocol==='https:'&&(u.hostname==='thesportsdb.com'||u.hostname==='www.thesportsdb.com'||u.hostname.endsWith('.thesportsdb.com'))?u.href:'';}catch{return '';}}
+// TheSportsDB serves resized media at "<url>/tiny" (100px) and "<url>/small" (200px).
+export function resizedBadge(src:string,size:'tiny'|'small'){return /\/images\/media\/.+\.(png|jpe?g|webp)$/i.test(src)?`${src}/${size}`:'';}
