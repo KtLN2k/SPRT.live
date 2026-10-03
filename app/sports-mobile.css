@@ -320,3 +320,17 @@
  .km-standing-row .localized-team-name{min-width:0;text-align:right}
 }
 .km-more-groups{display:block;width:100%;margin-top:12px;height:43px;border:1px solid #2a7555;border-radius:7px;background:#123c30;color:#43ef9b;font-size:14px;font-weight:700}
+
+.km-wordmark{gap:0!important;font-style:normal!important;letter-spacing:0!important}
+.km-wordmark>svg{margin-right:6px}
+.km-wordmark>span,.km-wordmark>i{font-size:0!important}
+.km-wordmark>span:after{
+ content:"SPRT";display:inline-block;color:#fff;
+ font:italic 900 27px/.86 Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;
+ letter-spacing:-1px;transform:skewX(-4deg)
+}
+.km-wordmark>i:after{
+ content:".live";display:inline-block;margin-left:1px;color:var(--km-green);
+ font:italic 900 17px/1 "Arial Black",Arial,sans-serif;
+ letter-spacing:-1.2px
+}

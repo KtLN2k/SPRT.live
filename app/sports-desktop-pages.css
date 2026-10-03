@@ -1804,6 +1804,14 @@ button.sd-table-row:hover .localized-team-name>span {
   font-style: normal
 }
 
+.ab-hero h1{
+ font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;
+ font-style:italic;font-weight:900;letter-spacing:-1px
+}
+.ab-hero h1 i{
+ font-family:"Arial Black",Arial,sans-serif;font-size:.58em;letter-spacing:-2px
+}
+
 .ab-hero p {
   margin: 0;
   color: #c3d9d1;
