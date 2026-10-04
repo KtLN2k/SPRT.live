@@ -16,8 +16,25 @@ type Timeline = EventData["timeline"][number];
 const statNames: Record<string, string> = { "field goal percentage":"אחוזי קליעה מהשדה", "3 point percentage":"אחוזי שלשות", "free throw percentage":"אחוזי עונשין", rebounds:"ריבאונדים", assists:"אסיסטים", steals:"חטיפות", blocks:"חסימות", turnovers:"איבודים", "3-point field goals":"שלשות", "shots on goal": "בעיטות למסגרת", "shots off goal": "בעיטות מחוץ למסגרת", "total shots": "סך בעיטות", "blocked shots": "בעיטות שנחסמו", "shots insidebox": "בעיטות מתוך הרחבה", "shots outsidebox": "בעיטות מחוץ לרחבה", "ball possession": "החזקת כדור", "corner kicks": "קרנות", "yellow cards": "כרטיסים צהובים", "red cards": "כרטיסים אדומים", "goalkeeper saves": "הצלות שוער", "total passes": "מסירות", "passes accurate": "מסירות מדויקות", "passes %": "אחוז דיוק במסירות", fouls: "עבירות", offsides: "נבדלים", offside: "נבדלים", expected_goals: "שערים צפויים (xG)" };
 const statLabel = (name: string) => statNames[name.toLowerCase()] || name;
 const positions: Record<string, string> = { Goalkeeper: "שוער", Defender: "הגנה", Midfielder: "קישור", Forward: "התקפה", Striker: "חלוץ", "Right Wing": "כנף ימין", "Left Wing": "כנף שמאל", "Attacking Midfielder": "קשר התקפי", "Defensive Midfielder": "קשר אחורי" };
-const eventLabel = (e: Timeline) => e.kind === "subst" ? "חילוף" : e.detail === "Yellow Card" ? "כרטיס צהוב" : e.detail === "Red Card" ? "כרטיס אדום" : e.detail === "Own Goal" ? "שער עצמי" : e.detail === "Penalty" ? "שער מפנדל" : e.kind.toLowerCase() === "goal" ? "שער" : e.detail === "Var" || e.kind === "Var" ? "VAR" : "אירוע";
-const eventType = (e: Timeline) => e.kind === "subst" ? "sub" : e.detail === "Yellow Card" ? "yellow" : e.detail === "Red Card" ? "red" : e.kind.toLowerCase() === "goal" ? "goal" : "other";
+const eventLabel = (e: Timeline) => {
+  const kind=e.kind.toLowerCase(),detail=e.detail.toLowerCase();
+  if(/subst|substitution/.test(kind)||/subst|substitution/.test(detail))return "חילוף";
+  if(/yellow/.test(detail)||/yellow/.test(kind))return "כרטיס צהוב";
+  if(/red/.test(detail)||/red/.test(kind))return "כרטיס אדום";
+  if(/own goal/.test(detail))return "שער עצמי";
+  if(/penalty/.test(detail)&&/goal/.test(kind))return "שער מפנדל";
+  if(/goal/.test(kind)||/goal/.test(detail))return "שער";
+  if(/var/.test(kind)||/var/.test(detail))return "VAR";
+  return "אירוע";
+};
+const eventType = (e: Timeline) => {
+  const kind=e.kind.toLowerCase(),detail=e.detail.toLowerCase();
+  if(/subst|substitution/.test(kind)||/subst|substitution/.test(detail))return "sub";
+  if(/yellow/.test(detail)||/yellow/.test(kind))return "yellow";
+  if(/red/.test(detail)||/red/.test(kind))return "red";
+  if(/goal/.test(kind)||/goal/.test(detail)||/penalty/.test(detail))return "goal";
+  return "other";
+};
 function EventIcon({ e }: { e: Timeline }) { const t = eventType(e); return t === "sub" ? <ArrowLeftRight size={14}/> : t === "yellow" || t === "red" ? <RectangleVertical size={15} fill="currentColor"/> : t === "goal" ? <IoFootballOutline size={18}/> : <Circle size={10}/>; }
 const sortEvents = (list: Timeline[]) => [...list].sort((a, b) => (parseFloat(a.minute) || 0) - (parseFloat(b.minute) || 0));
 
