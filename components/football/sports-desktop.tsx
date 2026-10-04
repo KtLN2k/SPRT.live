@@ -3,7 +3,7 @@ import {useEffect,useMemo,useState,useRef} from "react";
 import {Bell,ChevronLeft,Globe2,Heart,Star,Trophy,UserRound,Activity} from "lucide-react";
 import {IoFootballOutline,IoBasketballOutline,IoTennisballOutline} from "react-icons/io5";
 import {HiOutlineStatusOnline} from "react-icons/hi";
-import {DAY_INTERVAL,useFootball,useFavorites,useAlerts,useMatchNotifications,useLiveDay,detectAlerts,isQuietTime,clock,shiftDate,today,dayLabel} from "@/lib/football/client";
+import {DAY_INTERVAL,useFootball,useFavorites,useAlerts,useMatchNotifications,useLiveDay,useVisibilityResumeGuard,detectAlerts,isQuietTime,clock,shiftDate,today,dayLabel} from "@/lib/football/client";
 import {isLive,isFinished,leagueName,countryName,liveMinute,statusText} from "@/lib/football/types";
 import type {DayData,League,LeagueData,Match,EventData,SeasonData,Favorite} from "@/lib/football/types";
 import {displayName} from "@/lib/football/names";
@@ -43,6 +43,7 @@ export function SportsDesktop({footballDay,footballLeagues,footballLoading,footb
  const favorites=useFavorites();
  const alerts=useAlerts(),subscriptions=useMatchNotifications();
  const previousBasketball=useRef<Match[]|null>(null);
+ const resumedAlerts=useVisibilityResumeGuard();
  const footballOther=useFootball<DayData>(sport==="Soccer"&&date!==today()?{view:"day",date,tz:"Asia/Jerusalem",sport:"Soccer"}:null);
  const basketball=useFootball<DayData>(sport==="Basketball"?{view:"day",date,tz:"Asia/Jerusalem",sport:"Basketball"}:null,DAY_INTERVAL);
  const basketballData=useLiveDay(basketball.data,"Basketball",sport==="Basketball"&&date===today());
@@ -55,6 +56,7 @@ export function SportsDesktop({footballDay,footballLeagues,footballLoading,footb
   if(!data||data.liveState!=="connected")return;
   const before=previousBasketball.current;previousBasketball.current=data.matches;
   if(!before)return;
+  if(resumedAlerts.current){resumedAlerts.current=false;return;}
   const incoming=detectAlerts(before,data.matches,favorites.favorites.filter(f=>(f.sport||"Soccer")==="Basketball"),alerts.settings,data.fetchedAt,subscriptions.values,"Basketball");
   if(!incoming.length)return;
   const added=alerts.add(incoming);
