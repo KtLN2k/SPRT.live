@@ -2,6 +2,7 @@
 import {useEffect,useMemo,useState,useRef} from "react";
 import {Bell,ChevronLeft,Globe2,Heart,Star,Trophy,UserRound,Activity} from "lucide-react";
 import {IoFootballOutline,IoBasketballOutline,IoTennisballOutline} from "react-icons/io5";
+import {HiOutlineStatusOnline} from "react-icons/hi";
 import {DAY_INTERVAL,useFootball,useFavorites,useAlerts,useMatchNotifications,useLiveDay,detectAlerts,isQuietTime,clock,shiftDate,today,dayLabel} from "@/lib/football/client";
 import {isLive,isFinished,leagueName,countryName,liveMinute,statusText} from "@/lib/football/types";
 import type {DayData,League,LeagueData,Match,EventData,SeasonData,Favorite} from "@/lib/football/types";
@@ -35,7 +36,7 @@ function StatBars({stats,compact=false}:{stats:EventData["stats"];compact?:boole
  const available=stats.filter(x=>x.home!==""&&x.away!=="");const preferred=available.filter(x=>greenStats.includes(x.name.toLowerCase()));const rows=(compact&&preferred.length?preferred:available).slice(0,compact?4:5);
  return rows.length?<div className={`sd-stat-bars ${compact?"compact":""}`}>{rows.map((row,i)=>{const a=parseFloat(row.home)||0,b=parseFloat(row.away)||0,total=a+b;return <div className="sd-stat-line" key={`${row.name}-${i}`}><b>{row.home}</b><div className="sd-meter"><i style={{width:`${total?Math.max(5,a/total*100):0}%`}}/></div><span>{statLabel[row.name.toLowerCase()]||row.name}</span><div className="sd-meter red"><i style={{width:`${total?Math.max(5,b/total*100):0}%`}}/></div><b>{row.away}</b></div>})}</div>:<p className="sd-muted">סטטיסטיקות למשחק הזה עדיין לא התקבלו מהספק.</p>;
 }
-function Status({match}:{match:Match}){return isLive(match.status)?<span className="sd-live-label">LIVE</span>:<span className="sd-status-space" aria-hidden="true"/>}
+function Status({match}:{match:Match}){return isLive(match.status)?<span className="sd-live-label" title="בשידור חי" aria-label="בשידור חי"><HiOutlineStatusOnline/></span>:<span className="sd-status-space" aria-hidden="true"/>}
 export function SportsDesktop({footballDay,footballLeagues,footballLoading,footballError,openMatch,openLeague,openAlerts,showLegionnaires,openPanel}:Props){
  const [sport,setSport]=useState<Sport>("Soccer"),[date,setDate]=useState(today),[filter,setFilter]=useState("live"),[search,setSearch]=useState(""),[selectedId,setSelectedId]=useState(""),[expanded,setExpanded]=useState(""),[selectedLeagueId,setSelectedLeagueId]=useState(""),[view,setView]=useState("matches"),[groupLimit,setGroupLimit]=useState({key:"",count:INITIAL_GROUPS});
  const [tennis,setTennis]=useState(false);
