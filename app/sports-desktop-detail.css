@@ -322,3 +322,60 @@
 @keyframes ed-badge-in{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:none}}
 @keyframes ed-mark-in{from{opacity:0;transform:translateY(-50%) rotate(-22deg) scale(.9)}to{opacity:.16;transform:translateY(-50%) rotate(-12deg)}}
 @media(prefers-reduced-motion:reduce){.detail-sheet .ed-panel,.detail-sheet .ed-hero-copy,.detail-sheet .ed-hero>.emblem,.detail-sheet .ed-hero-mark{animation:none}.detail-sheet .ed-tab-bar[data-ready]{transition:none}}
+
+
+/* Equal desktop action rail: live status, alerts and favorite share identical slots. */
+@media(min-width:1050px){
+ .sd-game{align-items:stretch}
+ .sd-row-actions{
+  display:grid!important;
+  grid-template-columns:repeat(3,28px);
+  align-items:center;
+  justify-content:center;
+  flex:0 0 84px;
+  width:84px;
+  padding:0!important;
+  gap:0!important;
+ }
+ .sd-row-actions>.sd-row-star,
+ .sd-row-actions>.match-bell,
+ .sd-row-actions>.sd-live-label,
+ .sd-row-actions>.sd-status-space{
+  width:28px!important;
+  min-width:28px!important;
+  height:34px!important;
+  margin:0!important;
+  padding:0!important;
+  align-self:center;
+  justify-self:center;
+ }
+ .sd-row-actions>.sd-live-label{
+  display:grid!important;
+  place-items:center;
+  position:static!important;
+  inset:auto!important;
+  transform:none!important;
+ }
+ .sd-row-actions>.sd-status-space{display:block!important}
+ .sd-game-main{
+  padding-inline:5px!important;
+ }
+ .sd-game-main>.sd-live-label,
+ .sd-game-main>.sd-status-space{
+  display:none!important;
+ }
+}
+@media(min-width:1050px) and (max-width:1290px){
+ .sd-row-actions{
+  grid-template-columns:repeat(3,26px);
+  flex-basis:78px;
+  width:78px;
+ }
+ .sd-row-actions>.sd-row-star,
+ .sd-row-actions>.match-bell,
+ .sd-row-actions>.sd-live-label,
+ .sd-row-actions>.sd-status-space{
+  width:26px!important;
+  min-width:26px!important;
+ }
+}
