@@ -5516,3 +5516,157 @@ button.sd-table-row:hover .localized-team-name>span {
     font-variant-numeric: tabular-nums
   }
 }
+
+/* Centered two-sided match timeline: home events branch right, away events branch left. */
+.detail-sheet .md-timeline{
+  position:relative;
+  display:grid;
+  gap:14px;
+  margin:0;
+  padding:10px 0 14px;
+  list-style:none;
+  direction:ltr;
+}
+.detail-sheet .md-timeline:before{
+  content:"";
+  position:absolute;
+  top:12px;
+  bottom:12px;
+  left:50%;
+  right:auto;
+  width:2px;
+  transform:translateX(-50%);
+  background:linear-gradient(180deg,#2a5a51 0%,#2a5a51 88%,#2a5a5100 100%);
+}
+.detail-sheet .md-timeline>li{
+  position:relative;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 62px minmax(0,1fr);
+  gap:12px;
+  align-items:center;
+  min-height:58px;
+  direction:ltr;
+}
+.detail-sheet .md-timeline>li>time{
+  grid-column:2;
+  grid-row:1;
+  align-self:center;
+  justify-self:center;
+  z-index:3;
+  min-width:46px;
+  padding:5px 7px;
+  border:1px solid #2b514a;
+  border-radius:999px;
+  background:#08232b;
+  color:#c0d8cf;
+  font-size:11px;
+  font-weight:800;
+  line-height:1.2;
+  text-align:center;
+  font-variant-numeric:tabular-nums;
+  box-shadow:0 0 0 4px #061923;
+}
+.detail-sheet .md-timeline>li.goal>time{
+  border-color:#2fe68c;
+  color:#68efad;
+}
+.detail-sheet .md-timeline>li>time.missing{
+  color:#7f9a92;
+  border-style:dashed;
+}
+.detail-sheet .md-event{
+  position:relative;
+  grid-row:1;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  width:min(100%,235px);
+  min-width:0;
+  min-height:50px;
+  padding:8px 10px;
+  border:1px solid #1c3c42;
+  border-radius:9px;
+  background:#0a242d;
+  direction:rtl;
+  text-align:right;
+}
+.detail-sheet .md-timeline>li.home .md-event{
+  grid-column:3;
+  justify-self:start;
+  flex-direction:row-reverse;
+}
+.detail-sheet .md-timeline>li.away .md-event{
+  grid-column:1;
+  justify-self:end;
+  flex-direction:row;
+}
+.detail-sheet .md-timeline>li.home .md-event:before,
+.detail-sheet .md-timeline>li.away .md-event:before{
+  content:"";
+  position:absolute;
+  top:50%;
+  width:12px;
+  height:1px;
+  background:#315d54;
+  transform:translateY(-50%);
+}
+.detail-sheet .md-timeline>li.home .md-event:before{left:-13px}
+.detail-sheet .md-timeline>li.away .md-event:before{right:-13px}
+.detail-sheet .md-event>span:last-child{
+  display:grid;
+  gap:2px;
+  min-width:0;
+  flex:1;
+}
+.detail-sheet .md-event strong{
+  overflow:hidden;
+  color:#f0f9f4;
+  font-size:12.5px;
+  font-weight:750;
+  line-height:1.35;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.detail-sheet .md-event small{
+  overflow:hidden;
+  color:#91ada4;
+  font-size:10.5px;
+  line-height:1.35;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.detail-sheet .md-event-icon{
+  display:grid;
+  place-items:center;
+  width:30px;
+  height:30px;
+  flex:none;
+  border-radius:50%;
+  background:#102f37;
+  color:#abc7bd;
+}
+.detail-sheet .md-timeline .goal .md-event{
+  border-color:#235345;
+  background:linear-gradient(180deg,#0d302f,#0a242d);
+}
+.detail-sheet .md-timeline .goal .md-event-icon{background:#123f31;color:#5ce7a0}
+.detail-sheet .md-timeline .yellow .md-event-icon{background:#342f1d;color:#f0ce58}
+.detail-sheet .md-timeline .red .md-event-icon{background:#3a1d25;color:#f16a79}
+.detail-sheet .md-timeline .sub .md-event-icon{background:#142f40;color:#7fb5ea}
+.detail-sheet .md-timeline>li.inferred .md-event{border-style:dashed;opacity:.78}
+.detail-sheet .md-timeline.compact{gap:9px}
+.detail-sheet .md-timeline.compact:before{display:block}
+.detail-sheet .md-timeline.compact>li{grid-template-columns:minmax(0,1fr) 56px minmax(0,1fr);min-height:50px}
+.detail-sheet .md-timeline.compact .md-event{min-height:44px;padding:6px 8px}
+.detail-sheet .md-timeline.compact .md-event-icon{width:26px;height:26px}
+@media(max-width:620px){
+  .detail-sheet .md-timeline{gap:12px}
+  .detail-sheet .md-timeline>li{grid-template-columns:minmax(0,1fr) 50px minmax(0,1fr);gap:7px;min-height:54px}
+  .detail-sheet .md-timeline>li>time{min-width:40px;padding:4px 4px;font-size:10px;box-shadow:0 0 0 3px #061923}
+  .detail-sheet .md-event{width:100%;min-height:48px;padding:7px 7px;gap:6px;border-radius:8px}
+  .detail-sheet .md-event-icon{width:25px;height:25px}
+  .detail-sheet .md-event strong{font-size:11px}
+  .detail-sheet .md-event small{font-size:9.5px;white-space:normal}
+  .detail-sheet .md-timeline>li.home .md-event:before{left:-8px;width:7px}
+  .detail-sheet .md-timeline>li.away .md-event:before{right:-8px;width:7px}
+}
