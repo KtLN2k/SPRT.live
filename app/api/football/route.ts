@@ -3,9 +3,26 @@ import { legionnaire } from '@/lib/football/legionnaires-provider';
 import { hebrewTeam, searchCandidates, searchTeamQuery } from "@/lib/football/names";
 import { NextRequest, NextResponse } from "next/server";
 import { array, text, configured, provider, normalizeLeague, normalizeMatch, normalizeStanding, uniqueMatches, localDate, mergeLive } from "@/lib/football/provider";
-import type { LiveState } from "@/lib/football/types";
+import type { LiveState, Match } from "@/lib/football/types";
 const validId = (id: string) => /^\d{1,12}$/.test(id);
 const bad = () => NextResponse.json({ error: "בקשה לא תקינה" }, { status: 400 });
+async function hydratePenaltyScores(matches:Match[]) {
+  const targets=matches.filter(m=>/^PEN$/i.test(m.status)&&(m.penaltyHome==null||m.penaltyAway==null));
+  if(!targets.length)return matches;
+  const results=await Promise.allSettled(targets.map(m=>provider(`lookupevent.php?id=${m.id}`,30)));
+  const extras=new Map<string,Match>();
+  results.forEach((result,index)=>{
+    if(result.status!=="fulfilled")return;
+    const raw=array(result.value.data,"events")[0];
+    if(!raw)return;
+    extras.set(targets[index].id,normalizeMatch(raw));
+  });
+  return matches.map(m=>{
+    const extra=extras.get(m.id);
+    if(!extra)return m;
+    return {...m,penaltyHome:extra.penaltyHome??m.penaltyHome,penaltyAway:extra.penaltyAway??m.penaltyAway,status:extra.status||m.status};
+  });
+}
 export async function GET(request: NextRequest) {
   const p = request.nextUrl.searchParams, view = p.get("view"), id = p.get("id") || "";
   const limited = !configured();
@@ -22,7 +39,8 @@ export async function GET(request: NextRequest) {
     if (view === "live") {
       if (limited) return NextResponse.json({ matches: [], liveState: "unconfigured", fetchedAt: null });
       const result = await provider(sport==="Basketball"?"livescore/all":"livescore/soccer", 30, true);
-      return NextResponse.json({ matches: uniqueMatches(array(result.data, "livescore", "events").filter(r=>text(r.strSport).toLowerCase()===sport.toLowerCase())), liveState: "connected", fetchedAt: result.at });
+      const matches=await hydratePenaltyScores(uniqueMatches(array(result.data, "livescore", "events").filter(r=>text(r.strSport).toLowerCase()===sport.toLowerCase())));
+      return NextResponse.json({ matches, liveState: "connected", fetchedAt: result.at });
     }
     if (view === "day") {
       const date = p.get("date") || "", tz = p.get("tz") || "Asia/Jerusalem";
@@ -41,6 +59,7 @@ export async function GET(request: NextRequest) {
       if (!limited && date === localDate(new Date().toISOString(), tz)) {
         try { const result = liveResult; if(!result) throw new Error("Live unavailable"); matches = mergeLive(matches, uniqueMatches(array(result.data, "livescore", "events").filter(r=>text(r.strSport).toLowerCase()===sport.toLowerCase())), date, tz); liveState = "connected"; fetchedAt = result.at; } catch { /* explicit degraded status */ }
       }
+      matches=await hydratePenaltyScores(matches);
       return NextResponse.json({ matches, limited, liveState, fetchedAt, partial: results.some(r => r.status === "rejected") });
     }
     if (view === "leagues") {
