@@ -56,14 +56,15 @@ export default function Home() {
   const search = useFootball<{ teams: { id: string; name: string; country: string; league: string; badge?:string }[] }>(debouncedQuery.length >= 2 ? { view: "search", q: debouncedQuery, sport } : null);
   useEffect(() => { const timer = setTimeout(() => setDebouncedQuery(query.trim()), 450); return () => clearTimeout(timer); }, [query]);
   const previous = useRef<Match[] | null>(null);
-  const resumedAlerts=useVisibilityResumeGuard();
+  const resumedSoccerAlerts=useVisibilityResumeGuard();
+  const resumedBasketballAlerts=useVisibilityResumeGuard();
   useEffect(() => {
     const data = liveDayData;
     if (!data || data.liveState !== "connected") return;
     const before = previous.current;
     previous.current = data.matches;
     if (!before) return;
-    if(resumedAlerts.current){resumedAlerts.current=false;return;}
+    if(resumedSoccerAlerts.current){resumedSoccerAlerts.current=false;return;}
     const incoming = detectAlerts(before, data.matches, favorites.favorites, alerts.settings, data.fetchedAt, matchNotifications.values);
     if (!incoming.length) return;
     const added = alerts.add(incoming);
@@ -76,7 +77,7 @@ export default function Home() {
     const before=basketballPrevious.current;
     basketballPrevious.current=data.matches;
     if(!before)return;
-    if(resumedAlerts.current){resumedAlerts.current=false;return;}
+    if(resumedBasketballAlerts.current){resumedBasketballAlerts.current=false;return;}
     const incoming=detectAlerts(before,data.matches,favorites.favorites.filter(f=>(f.sport||"Soccer")==="Basketball"),alerts.settings,data.fetchedAt,matchNotifications.values,"Basketball");
     if(!incoming.length)return;
     const added=alerts.add(incoming);
