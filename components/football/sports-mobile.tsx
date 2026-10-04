@@ -5,7 +5,7 @@ import {IoBasketballOutline,IoFootballOutline} from "react-icons/io5";
 import {HiOutlineStatusOnline} from "react-icons/hi";
 import type {AlertSettings,DayData,EventData,Favorite,League,LeagueData,Match,SeasonData,TeamData} from "@/lib/football/types";
 import {countryName,follows,isFinished,isLive,leagueName,liveMinute,statusText} from "@/lib/football/types";
-import {DAY_INTERVAL,clock,dayLabel,detectAlerts,isQuietTime,shiftDate,today,useAlerts,useFavorites,useFootball,useLiveDay,useMatchNotifications} from "@/lib/football/client";
+import {DAY_INTERVAL,clock,dayLabel,detectAlerts,isQuietTime,shiftDate,today,useAlerts,useFavorites,useFootball,useLiveDay,useMatchNotifications,useVisibilityResumeGuard} from "@/lib/football/client";
 import {displayName,displayResult} from "@/lib/football/names";
 import {Emblem} from "./ui";
 import {TeamName} from "./team-name";
@@ -45,7 +45,8 @@ export function SportsMobile(){
  const catalog=useFootball<{leagues:League[]}>(screen==="leagues"||panel?.kind==="league"||searchOpen?{view:"leagues",sport}:null);
  const remote=useFootball<{teams:{id:string;name:string;league:string;country:string;badge?:string}[]}>(searchOpen&&query.trim().length>=2?{view:"search",q:query.trim(),sport}:null);
  const seen=useRef<{Soccer:Match[]|null;Basketball:Match[]|null}>({Soccer:null,Basketball:null});
- useEffect(()=>{if(!dayData||dayData.liveState!=="connected"||date!==today())return;const previous=seen.current[sport];seen.current[sport]=dayData.matches;if(!previous)return;const incoming=detectAlerts(previous,dayData.matches,favorites.favorites.filter(f=>(f.sport||"Soccer")===sport),alerts.settings,dayData.fetchedAt,notifications.values,sport);if(!incoming.length)return;const added=alerts.add(incoming);if(!isQuietTime(alerts.settings)&&alerts.settings.desktop&&"Notification" in window&&Notification.permission==="granted")for(const item of added){try{new Notification(item.title,{body:item.body,tag:item.id,icon:"/favicon.svg"})}catch{/* the in-app alert remains available */}}},[dayData,date,sport,favorites.favorites,alerts,notifications.values]);
+ const resumedAlerts=useVisibilityResumeGuard();
+ useEffect(()=>{if(!dayData||dayData.liveState!=="connected"||date!==today())return;const previous=seen.current[sport];seen.current[sport]=dayData.matches;if(!previous)return;if(resumedAlerts.current){resumedAlerts.current=false;return;}const incoming=detectAlerts(previous,dayData.matches,favorites.favorites.filter(f=>(f.sport||"Soccer")===sport),alerts.settings,dayData.fetchedAt,notifications.values,sport);if(!incoming.length)return;const added=alerts.add(incoming);if(!isQuietTime(alerts.settings)&&alerts.settings.desktop&&"Notification" in window&&Notification.permission==="granted")for(const item of added){try{new Notification(item.title,{body:item.body,tag:item.id,icon:"/favicon.svg"})}catch{/* the in-app alert remains available */}}},[dayData,date,sport,favorites.favorites,alerts,notifications.values]);
  const all=dayData?.matches||[];
  const visible=all.filter(m=>(filter==="all"||filter==="live"&&isLive(m.status)||filter==="finished"&&isFinished(m.status)||filter==="following"&&favorites.has("match",m.id)));
  const groups=useMemo(()=>{const map=new Map<string,Match[]>();for(const m of visible){const id=m.leagueId||m.league;const list=map.get(id);if(list)list.push(m);else map.set(id,[m])}return sortGroups([...map],id=>favorites.has("league",id))},[visible,favorites]);
