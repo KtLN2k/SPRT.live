@@ -3,7 +3,7 @@
  .sport-desktop{display:block}
  body:has(.sd-shell){background:#041018;color:#eff8f7}
  .app{display:none}
- .sd-shell{display:block;min-height:100vh;background:radial-gradient(circle at 50% 17%,#0b2028 0,#041018 36%,#031018 100%);color:#ebf3f3;font:14px/1.5 "Heebo",Arial,sans-serif;direction:rtl;padding-bottom:50px}
+ .sd-shell{display:block;min-height:100vh;background:radial-gradient(circle at 50% 17%,#0b2028 0,#041018 36%,#031018 100%);color:#ebf3f3;font:14px/1.5 "Heebo",Arial,sans-serif;direction:rtl;padding-bottom:0}
  .sd-shell button{color:inherit;min-width:0}
  .sd-shell button:focus-visible,.sd-shell input:focus-visible{outline:2px solid #28e88b;outline-offset:2px}
  .sd-hero{height:326px;position:relative;isolation:isolate;overflow:hidden;border-bottom:1px solid #263f45}
@@ -92,7 +92,7 @@
   letter-spacing:-1px;transform:skewX(-4deg)
  }
  .sd-wordmark>i:after{
-  content:".live";display:inline-block;margin-left:1px;color:#2df582;
+  content:".fan";display:inline-block;margin-left:1px;color:#2df582;
   font:italic 900 20px/1 "Arial Black",Arial,sans-serif;
   letter-spacing:-1.4px;text-shadow:0 0 14px #2df58255
  }
