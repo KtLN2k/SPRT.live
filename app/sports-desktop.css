@@ -172,3 +172,27 @@
 }
 @media(min-width:1050px) and (max-width:1290px){.sd-game-main{grid-template-columns:34px minmax(0,1fr) 78px minmax(0,1fr)}}
 .sd-more-groups{display:block;width:100%;margin:4px 0 14px;padding:11px;border:1px solid #307550;border-radius:7px;background:#124233;color:#70efad;font-size:13px;font-weight:700}
+
+
+/* Subtle live status icon for match-list rows */
+.sd-live-label{
+ display:grid!important;
+ place-items:center;
+ justify-self:center;
+ padding:0!important;
+ width:24px;
+ height:24px;
+ border-radius:50%;
+ background:transparent!important;
+ color:#ff3b5f!important;
+ font-size:20px!important;
+ line-height:1;
+ animation:sprt-live-breathe 2.4s ease-in-out infinite;
+}
+.sd-live-label svg{width:20px;height:20px;filter:drop-shadow(0 0 4px #ff3b5f3d)}
+.sd-live-text{display:inline-block;background:#e92e4b;color:#fff;font:800 10px/1 Arial,sans-serif;padding:3px 5px;border-radius:3px}
+@keyframes sprt-live-breathe{
+ 0%,100%{opacity:.72;transform:scale(.96)}
+ 50%{opacity:1;transform:scale(1.04)}
+}
+@media(prefers-reduced-motion:reduce){.sd-live-label{animation:none}}

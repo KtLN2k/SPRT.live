@@ -1,5 +1,6 @@
 "use client";
-import {Activity,CalendarDays,ChevronLeft,ChevronRight,CircleCheck,Clock3,LayoutGrid,RotateCcw,Star} from "lucide-react";
+import {CalendarDays,ChevronLeft,ChevronRight,CircleCheck,Clock3,LayoutGrid,RotateCcw,Star} from "lucide-react";
+import {HiOutlineStatusOnline} from "react-icons/hi";
 import {dayLabel,shiftDate,today} from "@/lib/football/client";
 
 const SECONDARY=[
@@ -24,7 +25,7 @@ export function LiveCommandBar({date,days,filter,counts,active,onDate,onFilter}:
  return <section className="lc-wrap" aria-label="משחקים ועדכונים">
   <div className="lc-bar">
    <button type="button" className={`lc-live ${active&&filter==="live"?"active":""}`} aria-pressed={active&&filter==="live"} onClick={()=>onFilter("live")}>
-    <span className="lc-broadcast"><Activity size={16}/><i aria-hidden="true"/></span>
+    <span className="lc-broadcast" aria-hidden="true"><HiOutlineStatusOnline size={20}/></span>
     <span className="lc-live-copy"><strong>עכשיו בלייב</strong><small>{live?`${live} משחקים מתקיימים כעת`:"מחכים למשחק הבא"}</small></span>
     <b>{live}</b>
    </button>

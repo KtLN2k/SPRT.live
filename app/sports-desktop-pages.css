@@ -5670,3 +5670,24 @@ button.sd-table-row:hover .localized-team-name>span {
   .detail-sheet .md-timeline>li.home .md-event:before{left:-8px;width:7px}
   .detail-sheet .md-timeline>li.away .md-event:before{right:-8px;width:7px}
 }
+
+
+/* Red online-status glyph for the primary "עכשיו בלייב" command */
+@media(min-width:1050px){
+ .lc-broadcast{
+  background:transparent!important;
+  color:#ff3b5f!important;
+ }
+ .lc-broadcast svg{
+  width:22px;
+  height:22px;
+  filter:drop-shadow(0 0 5px #ff3b5f45);
+  animation:sprt-command-live-breathe 2.4s ease-in-out infinite;
+ }
+ .lc-broadcast i{display:none!important}
+}
+@keyframes sprt-command-live-breathe{
+ 0%,100%{opacity:.72;transform:scale(.96)}
+ 50%{opacity:1;transform:scale(1.04)}
+}
+@media(prefers-reduced-motion:reduce){.lc-broadcast svg{animation:none}}
