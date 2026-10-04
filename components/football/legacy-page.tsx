@@ -13,7 +13,7 @@ import { SidebarProvider, Sidebar } from "@/components/ui/sidebar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Match, League, Favorite, DayData } from "@/lib/football/types";
 import { follows, isLive, isFinished, leagueName, countryName } from "@/lib/football/types";
-import { useMatchNotifications, isQuietTime, useDesignMode, useFootball, useFavorites, useAlerts, detectAlerts, today, dayLabel, shiftDate, clock, useLiveDay, DAY_INTERVAL } from "@/lib/football/client";
+import { useMatchNotifications, isQuietTime, useDesignMode, useFootball, useFavorites, useAlerts, detectAlerts, today, dayLabel, shiftDate, clock, useLiveDay, useVisibilityResumeGuard, DAY_INTERVAL } from "@/lib/football/client";
 import { MatchRow, FavoriteButton, Emblem, EmptyState, LoadingRows, CoverageNote } from "@/components/football/ui";
 import { MatchDetail, type Panel } from "@/components/football/details";
 import { LeagueDetail, TeamDetail } from "@/components/football/entity-pages";
@@ -56,12 +56,15 @@ export default function Home() {
   const search = useFootball<{ teams: { id: string; name: string; country: string; league: string; badge?:string }[] }>(debouncedQuery.length >= 2 ? { view: "search", q: debouncedQuery, sport } : null);
   useEffect(() => { const timer = setTimeout(() => setDebouncedQuery(query.trim()), 450); return () => clearTimeout(timer); }, [query]);
   const previous = useRef<Match[] | null>(null);
+  const resumedSoccerAlerts=useVisibilityResumeGuard();
+  const resumedBasketballAlerts=useVisibilityResumeGuard();
   useEffect(() => {
     const data = liveDayData;
     if (!data || data.liveState !== "connected") return;
     const before = previous.current;
     previous.current = data.matches;
     if (!before) return;
+    if(resumedSoccerAlerts.current){resumedSoccerAlerts.current=false;return;}
     const incoming = detectAlerts(before, data.matches, favorites.favorites, alerts.settings, data.fetchedAt, matchNotifications.values);
     if (!incoming.length) return;
     const added = alerts.add(incoming);
@@ -74,6 +77,7 @@ export default function Home() {
     const before=basketballPrevious.current;
     basketballPrevious.current=data.matches;
     if(!before)return;
+    if(resumedBasketballAlerts.current){resumedBasketballAlerts.current=false;return;}
     const incoming=detectAlerts(before,data.matches,favorites.favorites.filter(f=>(f.sport||"Soccer")==="Basketball"),alerts.settings,data.fetchedAt,matchNotifications.values,"Basketball");
     if(!incoming.length)return;
     const added=alerts.add(incoming);

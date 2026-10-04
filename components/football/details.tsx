@@ -88,7 +88,7 @@ export function MatchDetail({ panel, open, has, toggle }: DetailProps) {
   const [lineupHome,setLineupHome]=useState(true);
   const [tab,setTab]=useState("overview");
   // One request per refresh: share the match, stats and timeline across tabs.
-  const resource = useFootball<EventData>({view:"event",id:panel.id,sport:(panel.sport||panel.match?.sport)==="Basketball"?"Basketball":"Soccer"},60000);
+  const resource = useFootball<EventData>({view:"event",id:panel.id,sport:(panel.sport||panel.match?.sport)==="Basketball"?"Basketball":"Soccer"},30000);
   const data=resource.data;
   const match=data?.match||panel.match;
   const isBasketball=(panel.sport||match?.sport)==="Basketball", sport=isBasketball?"Basketball":"Soccer";

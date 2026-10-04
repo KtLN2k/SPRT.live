@@ -65,8 +65,10 @@ export function GoalToasts({matches,openMatch,openSettings}:{matches:Match[]|und
  const goalLog=useGoalLog();
  const [toasts,setToasts]=useState<Toast[]>([]);
  const previous=useRef<Map<string,[number,number]>|null>(null);
+ const resumed=useRef(false);
  const latest=useRef({settings,favorites,goalLog});
  latest.current={settings,favorites,goalLog};
+ useEffect(()=>{const onVisibility=()=>{if(document.visibilityState==="hidden"){resumed.current=true;setToasts([]);}};document.addEventListener("visibilitychange",onVisibility);return()=>document.removeEventListener("visibilitychange",onVisibility);},[]);
 
  const push=(items:Toast[])=>{
   if(!items.length)return;
@@ -94,6 +96,7 @@ export function GoalToasts({matches,openMatch,openSettings}:{matches:Match[]|und
   for(const m of matches){const g=goals(m);if(g)now.set(m.id,g);}
   const before=previous.current;previous.current=now;
   if(!before)return;
+  if(resumed.current){resumed.current=false;return;}
   const {settings:s,favorites:f,goalLog:log}=latest.current;
   const found:Toast[]=[],logged:{matchId:string;goal:{minute:string;home:boolean;score:string;at:string}}[]=[];
   for(const m of matches){

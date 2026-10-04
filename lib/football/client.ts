@@ -1,7 +1,7 @@
 "use client";
 export {detectAlerts} from "./notifications";
 import type {MatchAlertOptions,MatchSubscriptions} from "./notifications";
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { AlertItem, AlertSettings, DayData, Favorite, LiveState, Match } from "./types";
 import { demoData, demoFavorites, demoAlerts } from "./demo";
 import { follows } from "./types";
@@ -79,6 +79,15 @@ export function useFootball<T>(params: Record<string, string> | null, interval =
   const data=state.key===key?state.data:resourceCache.get(key)?.data as T|undefined;
   const error=state.key===key?state.error:undefined;
   return {data,error,loading:Boolean(key)&&!data&&!error,retry};
+}
+export function useVisibilityResumeGuard() {
+  const resumed=useRef(false);
+  useEffect(()=>{
+    const onVisibility=()=>{ if(document.visibilityState==="hidden") resumed.current=true; };
+    document.addEventListener("visibilitychange",onVisibility);
+    return()=>document.removeEventListener("visibilitychange",onVisibility);
+  },[]);
+  return resumed;
 }
 export const LIVE_INTERVAL=30000, DAY_INTERVAL=300000;
 // The livescore feed keeps finished games for a while, so patching the day list from it is safe between full reloads.
