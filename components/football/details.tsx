@@ -6,7 +6,6 @@ import { MapPin, CalendarDays, ArrowLeftRight, CircleDot, RectangleVertical, Cir
 import { IoFootballOutline } from "react-icons/io5";
 import type { Match, Favorite, EventData } from "@/lib/football/types";
 import { teamLabel } from "@/lib/football/identity";
-import { splitTeamAgeLabel } from "@/lib/football/names";
 import { isLive, isFinished, statusText, liveMinute, leagueName } from "@/lib/football/types";
 import { clock, dayLabel, useFootball, useGoalLog } from "@/lib/football/client";
 import { CardBadges, Emblem, LoadingRows, EmptyState, CoverageNote } from "./ui";
@@ -40,15 +39,21 @@ function Possession({ home, away }: { home: string; away: string }) {
   </div>;
 }
 
+const eventIsHome = (e: Timeline, match: Match) => e.team ? e.team === match.home ? true : e.team === match.away ? false : e.home : e.home;
+function EventCopy({e,inferred,missingCount}:{e:Timeline;inferred:boolean;missingCount:number}) {
+  const type=eventType(e), label=eventLabel(e);
+  if(inferred)return <span><strong>{missingCount > 1 ? `${missingCount} שערים ללא פירוט` : "מבקיע לא דווח"}</strong><small>{e.detail === "Seen" ? "שער שנקלט בעדכון הלייב" : "שער ללא פרטי שחקן או דקה"}</small></span>;
+  if(type==="sub"&&e.relatedPlayer)return <span><strong>נכנס: {e.relatedPlayer}</strong><small>{e.player ? `יצא: ${e.player}` : "חילוף"}</small></span>;
+  if(type==="goal")return <span><strong>{e.player || "מבקיע לא דווח"}</strong><small>{e.relatedPlayer ? `${label} · בישול: ${e.relatedPlayer}` : label}</small></span>;
+  if(type==="yellow"||type==="red")return <span><strong>{e.player || "שחקן לא דווח"}</strong><small>{label}</small></span>;
+  return <span><strong>{e.player || e.relatedPlayer || label}</strong><small>{label}</small></span>;
+}
 function EventsList({ events, match, compact = false }: { events: Timeline[]; match: Match; compact?: boolean }) {
   return <ol className={`md-timeline ${compact ? "compact" : ""}`}>{events.map((e, i) => {
-    const teamValue=e.team||(e.home?match.home:match.away);
-    const inferred = e.detail === "Seen" || e.detail.startsWith("Unreported"), missingCount = Number(e.detail.split(":")[1]) || 1, team = <TeamName value={teamValue}/>, inferredTeam=splitTeamAgeLabel(teamValue).primary;
-    return <li key={e.id || i} className={`${e.home ? "home" : "away"} ${eventType(e)} ${inferred ? "inferred" : ""}`}>
-      <div className="md-event"><span className="md-event-icon"><EventIcon e={e}/></span>{inferred
-        ? <span><strong>{missingCount > 1 ? `${missingCount} שערים ל${inferredTeam}` : `שער ל${inferredTeam}`}</strong><small>{e.detail === "Seen" ? "נקלט בלייב · המבקיע לא דווח" : "המבקיע והדקה לא דווחו"}</small></span>
-        : <span><strong>{e.player || eventLabel(e)}</strong><small>{eventLabel(e)} · {team}</small></span>}</div>
-      <time className={e.minute ? "" : "missing"}>{e.minute ? `${e.minute}′` : "לא דווח"}</time>
+    const inferred=e.detail==="Seen"||e.detail.startsWith("Unreported"), missingCount=Number(e.detail.split(":")[1])||1, home=eventIsHome(e,match);
+    return <li key={e.id || i} className={`${home ? "home" : "away"} ${eventType(e)} ${inferred ? "inferred" : ""}`}>
+      <div className="md-event"><span className="md-event-icon"><EventIcon e={e}/></span><EventCopy e={e} inferred={inferred} missingCount={missingCount}/></div>
+      <time className={e.minute ? "" : "missing"}>{e.minute ? `${e.minute}′` : "—"}</time>
     </li>;
   })}</ol>;
 }
