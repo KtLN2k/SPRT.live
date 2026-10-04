@@ -8,7 +8,7 @@ export type DayData = { partial?: boolean; matches: Match[]; limited: boolean; l
 export type LeagueData = { league: League; seasons: string[]; limited: boolean };
 export type SeasonData = { rows: Standing[]; matches: Match[]; limited: boolean; tableError: boolean; matchesError: boolean; tableSeason: string };
 export type TeamData = { badge?: string; name: string; country: string; venue: string; leagueId: string; league: string; season?: string; matches: Match[]; limited: boolean; partial: boolean };
-export type EventData = { match: Match; lineup: { id: string; name: string; home: boolean; substitute: boolean; position: string; number: string }[]; stats: { name: string; home: string; away: string }[]; timeline: { id: string; minute: string; kind: string; detail: string; player: string; team: string; home: boolean }[]; limited: boolean; unavailable: string[]; supplementedBy?: string };
+export type EventData = { match: Match; lineup: { id: string; name: string; home: boolean; substitute: boolean; position: string; number: string }[]; stats: { name: string; home: string; away: string }[]; timeline: { id: string; minute: string; kind: string; detail: string; player: string; relatedPlayer?: string; team: string; home: boolean }[]; limited: boolean; unavailable: string[]; supplementedBy?: string };
 export type AlertItem = { sport?:"Soccer"|"Basketball"; id: string; matchId: string; title: string; body: string; at: string; read: boolean };
 export type AlertSettings = { goals: boolean; kickoff: boolean; fulltime: boolean; desktop: boolean; quiet?: boolean; quietFrom?: string; quietTo?: string };
 export const isLive = (s: string) => /^(1H|2H|HT|ET|P|LIVE|In Progress|Halftime|BT|Q[1-4]|OT|Half)$/i.test(s);
