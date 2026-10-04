@@ -1,9 +1,9 @@
 "use client";
-import {useEffect,useMemo,useState,useRef} from "react";
+import {useMemo,useState} from "react";
 import {Bell,ChevronLeft,Globe2,Heart,Star,Trophy,UserRound,Activity} from "lucide-react";
 import {IoFootballOutline,IoBasketballOutline,IoTennisballOutline} from "react-icons/io5";
 import {HiOutlineStatusOnline} from "react-icons/hi";
-import {DAY_INTERVAL,useFootball,useFavorites,useAlerts,useMatchNotifications,useLiveDay,clock,shiftDate,today,dayLabel} from "@/lib/football/client";
+import {DAY_INTERVAL,useFootball,useFavorites,useLiveDay,clock,shiftDate,today,dayLabel} from "@/lib/football/client";
 import {isLive,isFinished,leagueName,countryName,liveMinute,statusText} from "@/lib/football/types";
 import type {DayData,League,LeagueData,Match,EventData,SeasonData,Favorite} from "@/lib/football/types";
 import {displayName} from "@/lib/football/names";
@@ -41,7 +41,6 @@ export function SportsDesktop({footballDay,footballLeagues,footballLoading,footb
  const [sport,setSport]=useState<Sport>("Soccer"),[date,setDate]=useState(today),[filter,setFilter]=useState("live"),[search,setSearch]=useState(""),[selectedId,setSelectedId]=useState(""),[expanded,setExpanded]=useState(""),[selectedLeagueId,setSelectedLeagueId]=useState(""),[view,setView]=useState("matches"),[groupLimit,setGroupLimit]=useState({key:"",count:INITIAL_GROUPS});
  const [tennis,setTennis]=useState(false);
  const favorites=useFavorites();
- const alerts=useAlerts(),subscriptions=useMatchNotifications();
  const footballOther=useFootball<DayData>(sport==="Soccer"&&date!==today()?{view:"day",date,tz:"Asia/Jerusalem",sport:"Soccer"}:null);
  const basketball=useFootball<DayData>(sport==="Basketball"?{view:"day",date,tz:"Asia/Jerusalem",sport:"Basketball"}:null,DAY_INTERVAL);
  const basketballData=useLiveDay(basketball.data,"Basketball",sport==="Basketball"&&date===today());
