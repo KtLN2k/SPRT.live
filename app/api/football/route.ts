@@ -126,10 +126,9 @@ export async function GET(request: NextRequest) {
     if (!validId(id)) return bad();
     if(view === "legionnaire") return NextResponse.json(await legionnaire(id));
     if (view === "cards") {
-      const result=await provider(`lookupeventstats.php?id=${id}`,30);
-      const rows=array(result.data,"eventstats");
-      const count=(name:string,side:string)=>{const row=rows.find(r=>text(r.strStat).toLowerCase()===name);const value=row?.[side];return value!=null&&/^\d+$/.test(text(value))?Number(value):null;};
-      return NextResponse.json({cards:{homeYellow:count("yellow cards","intHome"),awayYellow:count("yellow cards","intAway"),homeRed:count("red cards","intHome"),awayRed:count("red cards","intAway")},fetchedAt:result.at});
+      const statsPart=await eventPart("stats",id,true);
+      const count=(name:string,side:"home"|"away")=>{const row=statsPart.rows.find(r=>pick(r,"strStat","strStatistic","strName","name").toLowerCase()===name);const value=side==="home"?pick(row||{},"intHome","strHome","home"):pick(row||{},"intAway","strAway","away");return /^\d+$/.test(value)?Number(value):null;};
+      return NextResponse.json({cards:{homeYellow:count("yellow cards","home"),awayYellow:count("yellow cards","away"),homeRed:count("red cards","home"),awayRed:count("red cards","away")},fetchedAt:new Date().toISOString()});
     }
     if (view === "badge") {
       const kind=p.get("kind"); if(kind!=="team"&&kind!=="league")return bad();
