@@ -106,14 +106,18 @@ export function MatchDetail({ panel, open, has, toggle }: DetailProps) {
   const reported = data?.timeline || [];
   const seenGoals = useGoalLog().log[panel.id] || [];
   const goalsFor = (list: Timeline[], home: boolean) => list.filter(e => eventType(e) === "goal" && e.home === home).length;
-  const seen: Timeline[] = !isBasketball && !reported.some(e => eventType(e) === "goal") ? seenGoals.map(g => ({ id: `seen-${g.score}`, minute: g.minute, kind: "Goal", detail: "Seen", player: "", team: "", home: g.home })) : [];
   const scored = (home: boolean) => Number((home ? match?.homeScore : match?.awayScore) || 0);
+  const seen: Timeline[] = !isBasketball && match ? [true,false].flatMap(home => {
+    const deficit=Math.max(0,scored(home)-goalsFor(reported,home));
+    return seenGoals.filter(g=>g.home===home).slice(-deficit).map(g => ({ id: `seen-${home?"h":"a"}-${g.score}`, minute: g.minute, kind: "Goal", detail: "Seen", player: "", team: "", home }));
+  }) : [];
   const missing: Timeline[] = !isBasketball && match && data && (live || isFinished(match.status)) ? [true, false].flatMap(home => {
     const count=Math.max(0,scored(home)-goalsFor([...reported,...seen],home));
     return count?[{id:`missing-${home?"h":"a"}`,minute:"",kind:"Goal",detail:`Unreported:${count}`,player:"",team:"",home}]:[];
   }) : [];
   const events = [...missing, ...sortEvents([...reported, ...seen])];
   const goalsNote = missing.length || seen.length ? <p className="md-source-note">{missing.length ? "ספק הנתונים לא פירט את כל השערים במשחק הזה. המבקיעים יתווספו כאן אם יפורסמו." : "השערים נקלטו מעדכוני הלייב. המבקיעים יתווספו כאן אם יפורסמו."}</p> : null;
+  const coverage=data?.coverage;
   const stats = (data?.stats || []).filter(s => s.home !== "" || s.away !== "");
   const possession = stats.find(s => s.name.toLowerCase() === "ball possession");
   const keyStats = stats.filter(s => (isBasketball ? ["rebounds","assists","3-point field goals","field goal percentage"] : ["total shots","shots on goal","corner kicks","fouls"]).includes(s.name.toLowerCase()));
@@ -123,12 +127,13 @@ export function MatchDetail({ panel, open, has, toggle }: DetailProps) {
   const round = match?.round && match.round !== "0" ? (/^\d+$/.test(match.round) ? `מחזור ${match.round}` : match.round) : "";
   const pending = resource.loading && !data ? <LoadingRows/> : null;
   const failed = resource.error && !data ? <EmptyState title="המידע לא נטען" description={resource.error} error retry={resource.retry}/> : null;
+  const coverageMessage=isBasketball&&data?"TheSportsDB מעדכן תוצאות, שעון וסטטוס בכדורסל, אבל play-by-play וסטטיסטיקות משחק מפורטות אינם זמינים אוטומטית ברוב משחקי הכדורסל.":coverage?.timelineComplete===false?"התוצאה עדכנית יותר מפירוט האירועים של TheSportsDB. חסרים כרגע שערים או זמני שערים בציר המשחק, והמערכת תמשיך לבדוק אוטומטית.":"";
   const facts = match ? [{ icon: CalendarDays, label: "מועד", value: match.date ? dayLabel(match.date) : "" }, { icon: Clock3, label: "שעת פתיחה", value: match.kickoff ? `${clock(match.kickoff)} (שעון ישראל)` : "" }, { icon: MapPin, label: "אצטדיון", value: match.venue }, { icon: Trophy, label: "תחרות", value: leagueName(match.league) }, { icon: Flag, label: "עונה ומחזור", value: [match.season, round].filter(Boolean).join(" · ") }].filter(f => f.value) : [];
 
   const body = tab === "overview" ? (match && <>
     <section className="ed-section md-overview-section">
       <h3 className="ed-heading">תמונת המשחק{stats.length > 0 && <button type="button" className="md-more" onClick={() => setTab("stats")}>כל הנתונים<ChevronLeft size={14}/></button>}</h3>
-      {pending || (possession || keyStats.length ? <div className="md-stats">{possession && <Possession home={possession.home} away={possession.away}/>}{keyStats.map(s => <StatLine key={s.name} {...s}/>)}</div> : <p className="md-muted">{upcoming ? "הנתונים יופיעו עם שריקת הפתיחה." : live ? "התוצאה חיה. פירוט הנתונים עדיין לא התקבל מהספק." : "אין נתונים מפורטים למשחק הזה."}</p>)}
+      {pending || (possession || keyStats.length ? <div className="md-stats">{possession && <Possession home={possession.home} away={possession.away}/>}{keyStats.map(s => <StatLine key={s.name} {...s}/>)}</div> : <p className="md-muted">{upcoming ? "הנתונים יופיעו עם שריקת הפתיחה." : isBasketball ? "התוצאה והסטטוס זמינים, אבל TheSportsDB לא מספק סטטיסטיקות משחק אוטומטיות לרוב משחקי הכדורסל." : live ? "התוצאה חיה. פירוט הנתונים עדיין לא התקבל מהספק." : "אין נתונים מפורטים למשחק הזה."}</p>)}
     </section>
     <section className="ed-section md-moments-section">
       <h3 className="ed-heading">רגעי מפתח{events.length > 0 && <button type="button" className="md-more" onClick={() => setTab("timeline")}>למהלך המלא<ChevronLeft size={14}/></button>}</h3>
@@ -171,6 +176,7 @@ export function MatchDetail({ panel, open, has, toggle }: DetailProps) {
       {match && (match.venue || match.date) && <div className="md-meta">{match.date && <span><CalendarDays size={13}/>{dayLabel(match.date, true)}{match.kickoff && ` · ${clock(match.kickoff)}`}</span>}{match.venue && <span><MapPin size={13}/>{match.venue}</span>}</div>}
     </header>
     {resource.error && data && <div className="md-warning">עדכון פרטי המשחק מתעכב. מוצג המידע האחרון שהתקבל.</div>}
+    {coverageMessage && <div className="md-warning">{coverageMessage}</div>}
     <UnderlineTabs tabs={tabs} value={tab} onChange={setTab} label="מרכז המשחק"/>
     <div key={tab} className="ed-panel" role="tabpanel">
       {body}
