@@ -28,7 +28,7 @@ type Props={footballDay:DayData|undefined;footballLeagues:League[];footballLoadi
 const FILTER_KEYS=["all","live","upcoming","finished","followed"] as const;
 const sportLabel=(sport:Sport)=>sport==="Soccer"?"כדורגל":"כדורסל";
 const displayLeague=(name:string)=>leagueName(name);
-const minute=(m:Match)=>m.sport==="Basketball"?statusText(m.status)||m.progress||"במשחק":liveMinute(m);
+const minute=(m:Match)=>m.sport==="Basketball"?[statusText(m.status),m.progress].filter(Boolean).join(" · ")||"במשחק":liveMinute(m);
 const phase=(m:Match)=>{const state=isLive(m.status)?minute(m):isFinished(m.status)?statusText(m.status):clock(m.kickoff);return m.penaltyHome!=null&&m.penaltyAway!=null?`${state} · פנדלים ${m.penaltyHome}:${m.penaltyAway}`:state};
 const greenStats=["ball possession","total shots","shots on goal","corner kicks"];
 const statLabel:Record<string,string>={"ball possession":"החזקת כדור","total shots":"בעיטות לשער","shots on goal":"בעיטות למסגרת","corner kicks":"קרנות","yellow cards":"כרטיסים צהובים","red cards":"כרטיסים אדומים","fouls":"עבירות","offside":"נבדלים","offsides":"נבדלים","passes accurate":"מסירות מדויקות","total passes":"מסירות","goalkeeper saves":"הצלות שוער","rebounds":"ריבאונדים","assists":"אסיסטים","3-point field goals":"שלשות"};
@@ -54,7 +54,7 @@ export function SportsDesktop({footballDay,footballLeagues,footballLoading,footb
  const leagues=catalogLeagues.length?catalogLeagues:fromMatches;
  const chosen=all.find(m=>m.id===selectedId)||all.find(m=>isLive(m.status))||all[0];
  const chosenLeague=leagues.find(l=>l.id===selectedLeagueId)||leagues.find(l=>l.id===(sport==="Soccer"?"4644":"4387"))||leagues[0];
- const detail=useFootball<EventData>(chosen?{view:"event",id:chosen.id,sport}:null,60000);
+ const detail=useFootball<EventData>(chosen?{view:"event",id:chosen.id,sport}:null,chosen&&isLive(chosen.status)?30000:120000);
  const leagueInfo=useFootball<LeagueData>(sport==="Soccer"&&chosenLeague?{view:"league",id:chosenLeague.id}:null);
  const season=chosenLeague?.season||leagueInfo.data?.league.season||leagueInfo.data?.seasons?.[0];
  const table=useFootball<SeasonData>(sport==="Soccer"&&chosenLeague&&season?{view:"season",id:chosenLeague.id,season}:null);

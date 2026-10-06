@@ -4,7 +4,7 @@ import type {MatchAlertOptions,MatchSubscriptions} from "./notifications";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { AlertItem, AlertSettings, DayData, Favorite, LiveState, Match } from "./types";
 import { demoData, demoFavorites, demoAlerts } from "./demo";
-import { follows } from "./types";
+import { follows, isFinished, isLive, liveMinute } from "./types";
 export const today = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 export const dayLabel = (date: string, short = false) => new Intl.DateTimeFormat("he-IL", { timeZone: "Asia/Jerusalem", weekday: short ? "short" : "long", day: "numeric", month: "short" }).format(new Date(`${date}T12:00:00Z`));
 export const clock = (date: string) => { const d = new Date(date); return Number.isNaN(d.valueOf()) ? "שעה לא נקבעה" : new Intl.DateTimeFormat("he-IL", { timeZone: "Asia/Jerusalem", hour: "2-digit", minute: "2-digit" }).format(d); };
@@ -165,6 +165,38 @@ export function useGoalLog() {
     set(next);
   };
   return { log, add };
+}
+
+export function useObservedGoalLog(matches:Match[]|undefined,sport:"Soccer"|"Basketball"){
+  const {add}=useGoalLog();
+  const previous=useRef<Map<string,[number,number]>|null>(null);
+  const resumed=useVisibilityResumeGuard();
+  useEffect(()=>{
+    if(sport!=="Soccer"||!matches?.length)return;
+    const now=new Map<string,[number,number]>();
+    for(const match of matches){
+      if(match.homeScore==null||match.awayScore==null||match.homeScore===""||match.awayScore==="")continue;
+      const home=Number(match.homeScore),away=Number(match.awayScore);
+      if(Number.isFinite(home)&&Number.isFinite(away))now.set(match.id,[home,away]);
+    }
+    const before=previous.current;
+    previous.current=now;
+    if(!before)return;
+    if(resumed.current){resumed.current=false;return;}
+    const entries:{matchId:string;goal:LoggedGoal}[]=[];
+    for(const match of matches){
+      const old=before.get(match.id),current=now.get(match.id);
+      if(!old||!current||!(isLive(match.status)||isFinished(match.status)))continue;
+      const minute=isLive(match.status)?liveMinute(match).replace(/[′']/g,""):"";
+      for(const home of [true,false]){
+        const side=home?0:1;
+        const delta=current[side]-old[side];
+        if(delta<=0||delta>3)continue;
+        entries.push({matchId:match.id,goal:{minute,home,score:`${current[0]}-${current[1]}`,at:new Date().toISOString()}});
+      }
+    }
+    add(entries);
+  },[matches,sport,add,resumed]);
 }
 
 const EMPTY_MATCH_NOTIFICATIONS: MatchSubscriptions = {};
