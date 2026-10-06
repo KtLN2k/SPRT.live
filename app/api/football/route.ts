@@ -6,6 +6,51 @@ import { array, text, configured, provider, normalizeLeague, normalizeMatch, nor
 import type { LiveState, Match } from "@/lib/football/types";
 const validId = (id: string) => /^\d{1,12}$/.test(id);
 const bad = () => NextResponse.json({ error: "בקשה לא תקינה" }, { status: 400 });
+type DetailKind="lineup"|"stats"|"timeline";
+type DetailPart={rows:Record<string,unknown>[];failed:boolean;version:"v1"|"v2"|null};
+function detailArray(data:unknown,keys:string[],depth=0):{rows:Record<string,unknown>[];recognized:boolean}{
+  if(Array.isArray(data))return {rows:data.filter(v=>v&&typeof v==="object") as Record<string,unknown>[],recognized:true};
+  if(!data||typeof data!=="object")return {rows:[],recognized:false};
+  const obj=data as Record<string,unknown>;
+  for(const key of keys){
+    if(!(key in obj))continue;
+    const value=obj[key];
+    if(Array.isArray(value))return {rows:value.filter(v=>v&&typeof v==="object") as Record<string,unknown>[],recognized:true};
+    if(value==null)return {rows:[],recognized:true};
+  }
+  if(depth<2){
+    for(const value of Object.values(obj)){
+      if(!value||typeof value!=="object")continue;
+      const nested=detailArray(value,keys,depth+1);
+      if(nested.recognized)return nested;
+    }
+  }
+  return {rows:[],recognized:false};
+}
+async function eventPart(kind:DetailKind,id:string,enabled:boolean):Promise<DetailPart>{
+  if(!enabled)return {rows:[],failed:false,version:null};
+  const specs={
+    lineup:{v2:`lookup/event_lineup/${id}`,v1:`lookuplineup.php?id=${id}`,keys:["lineup","event_lineup","players"]},
+    stats:{v2:`lookup/event_stats/${id}`,v1:`lookupeventstats.php?id=${id}`,keys:["eventstats","stats","statistics"]},
+    timeline:{v2:`lookup/event_timeline/${id}`,v1:`lookuptimeline.php?id=${id}`,keys:["timeline","event_timeline","events"]}
+  } as const;
+  const spec=specs[kind];
+  if(configured()){
+    try{
+      const result=await provider(spec.v2,20,true);
+      const parsed=detailArray(result.data,[...spec.keys]);
+      if(parsed.recognized)return {rows:parsed.rows,failed:false,version:"v2"};
+    }catch{/* fall back to the mature v1 endpoint */}
+  }
+  try{
+    const result=await provider(spec.v1,20);
+    return {rows:detailArray(result.data,[...spec.keys]).rows,failed:false,version:"v1"};
+  }catch{return {rows:[],failed:true,version:null}}
+}
+const pick=(row:Record<string,unknown>,...keys:string[])=>{
+  for(const key of keys){const value=text(row[key]);if(value)return value;}
+  return "";
+};
 async function hydratePenaltyScores(matches:Match[]) {
   const targets=matches.filter(m=>/^PEN$/i.test(m.status)&&(m.penaltyHome==null||m.penaltyAway==null));
   if(!targets.length)return matches;
@@ -123,20 +168,79 @@ export async function GET(request: NextRequest) {
     if (view === "event") {
       const section=p.get("section")||"all";
       if(!["all","info","timeline","lineup","stats"].includes(section))return bad();
-      const part=(name:string,path:string)=>section==="all"||section===name?provider(path,30):Promise.resolve({data:{},at:""});
-      const [info, lineup, stats, timeline, live] = await Promise.allSettled([
-        provider(`lookupevent.php?id=${id}`,30),
-        part("lineup",`lookuplineup.php?id=${id}`),
-        part("stats",`lookupeventstats.php?id=${id}`),
-        part("timeline",`lookuptimeline.php?id=${id}`),
-        configured()?provider(sport==="Basketball"?"livescore/all":"livescore/soccer",30,true):Promise.resolve({data:{},at:""})
+      const wants=(name:DetailKind)=>section==="all"||section===name;
+      const [info,lineupPart,statsPart,timelinePart,live]=await Promise.all([
+        provider(`lookupevent.php?id=${id}`,20).catch(()=>null),
+        eventPart("lineup",id,wants("lineup")),
+        eventPart("stats",id,wants("stats")),
+        eventPart("timeline",id,wants("timeline")),
+        configured()?provider(sport==="Basketball"?"livescore/all":"livescore/soccer",20,true).catch(()=>null):Promise.resolve(null)
       ]);
-      const base = info.status === "fulfilled" ? array(info.value.data, "events")[0] : null;
-      const liveEvent=live.status==="fulfilled"?array(live.value.data,"livescore","events").find(r=>text(r.idEvent)===id && text(r.strSport).toLowerCase()===sport.toLowerCase()):null;
+      const base=info?array(info.data,"events")[0]:null;
+      const liveEvent=live?array(live.data,"livescore","events").find(r=>text(r.idEvent)===id&&text(r.strSport).toLowerCase()===sport.toLowerCase()):null;
       const event=base||liveEvent?{...base,...Object.fromEntries(Object.entries(liveEvent||{}).filter(([,v])=>v!==""&&v!=null))}:null;
-      if (!event || (text(event.strSport)&&text(event.strSport).toLowerCase()!==sport.toLowerCase())) throw new Error("Event unavailable");
+      if(!event||(text(event.strSport)&&text(event.strSport).toLowerCase()!==sport.toLowerCase()))throw new Error("Event unavailable");
       const normalizedMatch=normalizeMatch(event);
-      return NextResponse.json({ match: normalizedMatch, limited, lineup: lineup.status === "fulfilled" ? array(lineup.value.data, "lineup").map(r => ({ id: text(r.idLineup || r.idPlayer), name: text(r.strPlayer), home: /^(yes|true|home|1)$/i.test(text(r.strHome)) || hebrewTeam(text(r.strTeam)) === normalizedMatch.home, substitute: r.strSubstitute === "Yes", position: text(r.strPosition), number: text(r.intSquadNumber) })) : [], stats: stats.status === "fulfilled" ? array(stats.value.data, "eventstats").map(r => ({ name: text(r.strStat), home: text(r.intHome), away: text(r.intAway) })) : [], timeline: timeline.status === "fulfilled" ? array(timeline.value.data, "timeline").map(r => { const team=hebrewTeam(text(r.strTeam)); return { id: text(r.idTimeline), minute: text(r.intTime), kind: text(r.strTimeline), detail: text(r.strTimelineDetail), player: text(r.strPlayer), relatedPlayer: text(r.strAssist || r.strPlayer2 || r.strPlayerSub), team, home: /^(yes|true|home|1)$/i.test(text(r.strHome)) || (!!team && team === normalizedMatch.home) }; }).sort((a, b) => parseInt(a.minute) - parseInt(b.minute)) : [], unavailable: [lineup.status === "rejected" ? "הרכבים" : "", stats.status === "rejected" ? "סטטיסטיקות" : "", timeline.status === "rejected" ? "אירועים" : ""].filter(Boolean) });
+      const isHomeRow=(row:Record<string,unknown>)=>{
+        const teamId=pick(row,"idTeam","idClub","idSide");
+        const team=hebrewTeam(pick(row,"strTeam","strTeamName","team"));
+        const flag=pick(row,"strHome","isHome","home");
+        if(teamId&&normalizedMatch.homeId)return teamId===normalizedMatch.homeId;
+        if(team)return team===normalizedMatch.home;
+        return /^(yes|true|home|1)$/i.test(flag);
+      };
+      const lineup=lineupPart.rows.map(r=>({
+        id:pick(r,"idLineup","idPlayer","id"),
+        name:pick(r,"strPlayer","strPlayerName","name"),
+        home:isHomeRow(r),
+        substitute:/^(yes|true|1|sub|substitute)$/i.test(pick(r,"strSubstitute","isSubstitute","substitute")),
+        position:pick(r,"strPosition","strPos","position"),
+        number:pick(r,"intSquadNumber","intNumber","number")
+      })).filter(r=>r.name);
+      const stats=statsPart.rows.map(r=>({
+        name:pick(r,"strStat","strStatistic","strName","name"),
+        home:pick(r,"intHome","strHome","home"),
+        away:pick(r,"intAway","strAway","away")
+      })).filter(r=>r.name&&(r.home!==""||r.away!==""));
+      const timeline=timelinePart.rows.map((r,index)=>{
+        const team=hebrewTeam(pick(r,"strTeam","strTeamName","team"));
+        return {
+          id:pick(r,"idTimeline","idEventTimeline","id")||`${id}-timeline-${index}`,
+          minute:pick(r,"intTime","intMinute","strTime","minute"),
+          kind:pick(r,"strTimeline","strType","strEvent","type"),
+          detail:pick(r,"strTimelineDetail","strDetail","detail"),
+          player:pick(r,"strPlayer","strPlayerName","player"),
+          relatedPlayer:pick(r,"strAssist","strPlayer2","strPlayerSub","strRelatedPlayer","assist"),
+          team,
+          home:isHomeRow(r)
+        };
+      }).filter(r=>r.kind||r.detail||r.player).sort((a,b)=>(parseFloat(a.minute)||0)-(parseFloat(b.minute)||0));
+      const goalCount=timeline.filter(r=>/goal/i.test(`${r.kind} ${r.detail}`)&&!/missed/i.test(r.detail)).length;
+      const scoreTotal=Number(normalizedMatch.homeScore||0)+Number(normalizedMatch.awayScore||0);
+      const timelineComplete=sport==="Soccer"&&Number.isFinite(scoreTotal)&&!/^P(?:EN)?$/i.test(normalizedMatch.status)&&scoreTotal>0?goalCount===scoreTotal:null;
+      const versions=[lineupPart.version,statsPart.version,timelinePart.version].filter(Boolean);
+      const apiVersion=versions.length&&!versions.every(v=>v===versions[0])?"mixed":versions[0]||"v1";
+      const availability=(rows:unknown[],kind:DetailKind)=>rows.length?"available":sport==="Basketball"&&(kind==="timeline"||kind==="stats")?"limited":"missing";
+      return NextResponse.json({
+        match:normalizedMatch,
+        limited,
+        lineup,
+        stats,
+        timeline,
+        coverage:{
+          source:"TheSportsDB",
+          apiVersion,
+          timeline:availability(timeline,"timeline"),
+          stats:availability(stats,"stats"),
+          lineup:availability(lineup,"lineup"),
+          timelineComplete
+        },
+        unavailable:[
+          lineupPart.failed?"הרכבים":"",
+          statsPart.failed?"סטטיסטיקות":"",
+          timelinePart.failed?"אירועים":""
+        ].filter(Boolean)
+      });
     }
     return bad();
   } catch { return NextResponse.json({ error: "לא הצלחנו לקבל נתונים כרגע. אפשר לנסות שוב בעוד רגע." }, { status: 502, headers: { "Cache-Control": "no-store" } }); }
