@@ -5,7 +5,7 @@ import {IoBasketballOutline,IoFootballOutline} from "react-icons/io5";
 import {HiOutlineStatusOnline} from "react-icons/hi";
 import type {AlertSettings,DayData,EventData,Favorite,League,LeagueData,Match,SeasonData,TeamData} from "@/lib/football/types";
 import {countryName,follows,isFinished,isLive,leagueName,liveMinute,statusText} from "@/lib/football/types";
-import {DAY_INTERVAL,clock,dayLabel,detectAlerts,isQuietTime,shiftDate,today,useAlerts,useFavorites,useFootball,useLiveDay,useMatchNotifications,useVisibilityResumeGuard} from "@/lib/football/client";
+import {DAY_INTERVAL,clock,dayLabel,detectAlerts,isQuietTime,shiftDate,today,useAlerts,useFavorites,useFootball,useLiveDay,useMatchNotifications,useObservedGoalLog,useVisibilityResumeGuard} from "@/lib/football/client";
 import {displayName,displayResult} from "@/lib/football/names";
 import {Emblem} from "./ui";
 import {TeamName} from "./team-name";
@@ -42,6 +42,7 @@ export function SportsMobile(){
  const favorites=useFavorites(),alerts=useAlerts(),notifications=useMatchNotifications();
  const day=useFootball<DayData>({view:"day",date,tz:"Asia/Jerusalem",sport},DAY_INTERVAL);
  const dayData=useLiveDay(day.data,sport,date===today());
+ useObservedGoalLog(dayData?.matches,sport);
  const catalog=useFootball<{leagues:League[]}>(screen==="leagues"||panel?.kind==="league"||searchOpen?{view:"leagues",sport}:null);
  const remote=useFootball<{teams:{id:string;name:string;league:string;country:string;badge?:string}[]}>(searchOpen&&query.trim().length>=2?{view:"search",q:query.trim(),sport}:null);
  const seen=useRef<{Soccer:Match[]|null;Basketball:Match[]|null}>({Soccer:null,Basketball:null});
